@@ -1,0 +1,615 @@
+------------------------------------------------------------
+revno: 3260
+tags: clone-5.5.20-build
+committer: Sergey Vojtovich <sergey.vojtovich@oracle.com>
+branch nick: mysql-5.5-security-push
+timestamp: Fri 2011-12-16 12:17:13 +0400
+message:
+  Test case for BUG11763712 is intended for 5.1 only.
+------------------------------------------------------------
+revno: 3259 [merge]
+committer: Mattias Jonsson <mattias.jonsson@oracle.com>
+branch nick: topush-5.5-sec
+timestamp: Thu 2011-12-15 17:12:04 +0100
+message:
+  merge. Disabled the added test in merge.test from 5.1.
+    ------------------------------------------------------------
+    revno: 2661.768.43
+    tags: clone-5.1.61-build
+    committer: Mattias Jonsson <mattias.jonsson@oracle.com>
+    branch nick: topush-5.1-sec
+    timestamp: Thu 2011-12-15 16:59:18 +0100
+    message:
+      Post push fix for merge.test and mysqlcheck.test on windows
+------------------------------------------------------------
+revno: 3258 [merge]
+committer: Georgi Kodinov <Georgi.Kodinov@Oracle.com>
+branch nick: merge-5.5-security
+timestamp: Thu 2011-12-15 14:17:21 +0200
+message:
+  empty weave merge mysql-5.1-security->mysql-5.5-security
+    ------------------------------------------------------------
+    revno: 2661.768.42 [merge]
+    committer: Georgi Kodinov <Georgi.Kodinov@Oracle.com>
+    branch nick: merge-5.1-security
+    timestamp: Thu 2011-12-15 14:10:20 +0200
+    message:
+      merge mysql-5.1->mysql-5.1-security
+------------------------------------------------------------
+revno: 3257 [merge]
+committer: Georgi Kodinov <Georgi.Kodinov@Oracle.com>
+branch nick: merge-5.5-security
+timestamp: Thu 2011-12-15 14:13:46 +0200
+message:
+  merge mysql-5.5->mysql-5.5-security
+    ------------------------------------------------------------
+    revno: 3097.116.70
+    committer: Chaithra Gopalareddy<chaithra.gopalareddy@oracle.com>
+    branch nick: mysql-5.5
+    timestamp: Thu 2011-12-15 16:48:40 +0530
+    message:
+      Bug#13344643:Format function in view looses locale information
+      
+      Problem description:
+      When a view is created using function FORMAT and if FORMAT function uses locale
+      option,definition of view saved into server doesn't contain that locale information,
+      Ex:
+      create  table test2 (bb decimal (10,2));
+      insert into test2 values (10.32),(10009.2),(12345678.21);
+      create view test3 as select format(bb,1,'sk_SK') as cc from test2;
+      select * from test3;
+      +--------------+
+      | cc           |
+      +--------------+
+      | 10.3         |
+      | 10,009.2     |
+      | 12,345,678.2 |
+      +--------------+
+      3 rows in set (0.02 sec)
+      
+      show create view test3
+                      View: test3
+               Create View: CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost`
+      SQL SECURITY DEFINER VIEW `test3` AS select format(`test2`.`bb`,1) AS `cc`
+      from `test2`
+      character_set_client: latin1
+      collation_connection: latin1_swedish_ci
+      1 row in set (0.02 sec)
+      
+      Problem Analysis:
+      The function Item_func_format::print() which prints the query string to create
+      the view does not print the third argument (i.e the locale information). Hence
+       view is created without locale information. 
+      
+      Problem Solution:
+      If argument count is more than 2 we now print the third argument onto the query string.
+      
+      Files changed:
+      sql/item_strfunc.cc
+      Function call changes: Item_func_format::print()
+      mysql-test/t/select.test
+      Added test case to test the bug
+      mysql-test/r/select.result
+      Result of the test case appended here
+    ------------------------------------------------------------
+    revno: 3097.116.69
+    committer: Tor Didriksen <tor.didriksen@oracle.com>
+    branch nick: 5.5
+    timestamp: Thu 2011-12-15 10:44:33 +0100
+    message:
+      Bug#13463417 63487: ANNOYING TRACE MESSAGE IN CMAKE CODE
+      
+      Remove it.
+    ------------------------------------------------------------
+    revno: 3097.116.68
+    committer: Andrei Elkin <andrei.elkin@oracle.com>
+    branch nick: 5.5-bug13437900-repl_ignore_server_ids
+    timestamp: Wed 2011-12-14 17:02:55 +0200
+    message:
+      
+      bug#13437900
+      post-push changes to please solaris compiler.
+    ------------------------------------------------------------
+    revno: 3097.116.67
+    committer: Andrei Elkin <andrei.elkin@oracle.com>
+    branch nick: 5.5-bug13437900-repl_ignore_server_ids
+    timestamp: Wed 2011-12-14 15:33:43 +0200
+    message:
+      Bug#13437900 - VALGRIND REPORTS A LEAK FOR REPL_IGNORE_SERVER_IDS
+      
+      There was memory leak when running some tests on PB2.
+      The reason of the failure is an early return from change_master()
+      that was supposed to deallocate a dyn-array.
+      
+      Actually the same bug58915 was fixed in trunk with relocating the dyn-array
+      destruction into THD::cleanup_after_query() which can't be bypassed.
+      The current patch backports magne.mahre@oracle.com-20110203101306-q8auashb3d7icxho
+      and adds two optimizations: were done: the static buffer for the dyn-array to base on,
+      and the array initialization is called precisely when it's necessary rather than
+      per each CHANGE-MASTER as before.
+    ------------------------------------------------------------
+    revno: 3097.116.66
+    committer: Georgi Kodinov <Georgi.Kodinov@Oracle.com>
+    branch nick: B11754011-5.5
+    timestamp: Wed 2011-12-14 12:49:32 +0200
+    message:
+      Addendum to the fix for bug #11754011: fixed a testcase result to include 
+      the new --slow-start-timeout option's help output
+    ------------------------------------------------------------
+    revno: 3097.116.65
+    committer: Georgi Kodinov <Georgi.Kodinov@Oracle.com>
+    branch nick: B11754011-5.5
+    timestamp: Tue 2011-12-13 17:44:19 +0200
+    message:
+      Bug#11754011: 45546: START WINDOWS SERVICE, THEN EXECUTE WHAT IS NEEDED.
+      
+      Added a global read-only option slow-start-timeout to control the
+      Windows service control manager's service start timeout, that was
+      currently hard-coded to be 15 seconds.
+      The default of the new option is 15 seconds.
+      The timeout can also be set to 0 (to mean no timeout applicable).
+    ------------------------------------------------------------
+    revno: 3097.116.64 [merge]
+    committer: Annamalai Gurusami <annamalai.gurusami@oracle.com>
+    branch nick: mysql-5.5-bug13117023
+    timestamp: Tue 2011-12-13 17:10:09 +0530
+    message:
+      Merging from mysql-5.1 to mysql-5.5. 
+        ------------------------------------------------------------
+        revno: 2661.798.2
+        committer: Annamalai Gurusami <annamalai.gurusami@oracle.com>
+        branch nick: mysql-5.1-bug13117023
+        timestamp: Tue 2011-12-13 14:26:12 +0530
+        message:
+          Bug #13117023: Innodb increments handler_read_key when it should not
+          
+          The counter handler_read_key (SSV::ha_read_key_count) is incremented 
+          incorrectly.
+          
+          The mysql server maintains a per thread system_status_var (SSV)
+          object.  This object contains among other things the counter
+          SSV::ha_read_key_count. The purpose of this counter is to measure the
+          number of requests to read a row based on a key (or the number of
+          index lookups).
+          
+          This counter was wrongly incremented in the
+          ha_innobase::innobase_get_index(). The fix removes
+          this increment statement (for both innodb and innodb_plugin).
+          
+          The various callers of the innobase_get_index() was checked to
+          determine if anybody must increment this counter (if they first call
+          innobase_get_index() and then perform an index lookup).  It was found
+          that no caller of innobase_get_index() needs to worry about the
+          SSV::ha_read_key_count counter.
+    ------------------------------------------------------------
+    revno: 3097.116.63 [merge]
+    committer: Marko M?kel? <marko.makela@oracle.com>
+    branch nick: mysql-5.5
+    timestamp: Mon 2011-12-12 13:53:18 +0200
+    message:
+      Merge mysql-5.1 to mysql-5.5.
+        ------------------------------------------------------------
+        revno: 2661.798.1
+        committer: Marko M?kel? <marko.makela@oracle.com>
+        branch nick: mysql-5.1
+        timestamp: Mon 2011-12-12 13:48:24 +0200
+        message:
+          Bug#13418887 ERROR IN DIAGNOSTIC FUNCTION PAGE_REC_PRINT()
+          
+          When printing information about a ROW_FORMAT=REDUNDANT record, pass
+          the correct flag to rec_get_next_offs().
+          
+          rb:821 approved by Jimmy Yang
+------------------------------------------------------------
+revno: 3256 [merge]
+committer: Mattias Jonsson <mattias.jonsson@oracle.com>
+branch nick: topush-5.5-sec
+timestamp: Wed 2011-12-14 15:33:01 +0100
+message:
+  merged bug#12361113.
+  
+  Also added tests for partitions key caches.
+    ------------------------------------------------------------
+    revno: 2661.768.41 [merge]
+    committer: Mattias Jonsson <mattias.jonsson@oracle.com>
+    branch nick: topush-5.1-sec
+    timestamp: Wed 2011-12-14 14:41:40 +0100
+    message:
+      merge
+        ------------------------------------------------------------
+        revno: 1810.4000.36 [merge]
+        tags: clone-5.0.95-build
+        committer: Mattias Jonsson <mattias.jonsson@oracle.com>
+        branch nick: topush-5.0-sec
+        timestamp: Wed 2011-12-14 14:05:22 +0100
+        message:
+          merge
+            ------------------------------------------------------------
+            revno: 1810.4005.1
+            committer: Mattias Jonsson <mattias.jonsson@oracle.com>
+            branch nick: b12361113-50-sec
+            timestamp: Mon 2011-12-12 14:07:02 +0100
+            message:
+              Bug#12361113: CRASH WHEN "LOAD INDEX INTO CACHE" WITH TOO
+              SMALL KEY CACHE
+              
+              The server crashed on division by zero because the key cache was not
+              initialized and the block length was 0 which was used in a division.
+              
+              The fix was to not allow CACHE INDEX if the key cache was not initiallized.
+              Thus never try LOAD INDEX INTO CACHE for an uninitialized key cache.
+              
+              Also added some windows files/directories to .bzrignore.
+------------------------------------------------------------
+revno: 3255 [merge]
+committer: Georgi Kodinov <Georgi.Kodinov@Oracle.com>
+branch nick: merge-5.5-security
+timestamp: Mon 2011-12-12 13:45:54 +0200
+message:
+  empty weave merge mysql-5.1-security->mysql-5-5.security
+    ------------------------------------------------------------
+    revno: 2661.768.40 [merge]
+    committer: Georgi Kodinov <Georgi.Kodinov@Oracle.com>
+    branch nick: merge-5.1-security
+    timestamp: Mon 2011-12-12 12:25:35 +0100
+    message:
+      merge 5.1->5.1-security.
+------------------------------------------------------------
+revno: 3254 [merge]
+committer: Georgi Kodinov <Georgi.Kodinov@Oracle.com>
+branch nick: merge-5.5-security
+timestamp: Mon 2011-12-12 12:28:23 +0100
+message:
+  merged 5.5->5.5-security
+    ------------------------------------------------------------
+    revno: 3097.116.62
+    committer: kevin.lewis@oracle.com
+    branch nick: mysql-5.5
+    timestamp: Thu 2011-12-08 13:32:19 -0600
+    message:
+      Bug #13116225 	LIVE DOWNGRADE CRASHES WITH INNODB_PAGE_SIZE=4K
+      
+      This bug ensures that a live downgrade from an InnoDB 5.6 with WL5756 and
+      a database created with innodb-page-size=8k or 4k will make a version 5.5
+      installation politely refuse to start. Instead of crashing or giving some
+      indication about a corrupted database, it will indicate the page size
+      difference. 
+      
+      This patch takes only that part of the Wl5756 patch that is needed to
+      protect against opening a tablespace that is stamped with a different
+      page size.
+      
+      It also contains the change in dict_index_find_on_id_low() just in case
+      a database with another page size is created by recompiling a pre-WL5756
+      InnoDB.
+    ------------------------------------------------------------
+    revno: 3097.116.61
+    committer: Jimmy Yang <jimmy.yang@oracle.com>
+    branch nick: mysql-5.5
+    timestamp: Wed 2011-12-07 18:44:52 -0800
+    message:
+      Fix Bug #13083023 - 60229: BROKEN COMPATIBILITY: ERROR WHILE CREATE TABLE
+      WITH FOREIGN KEY CONSTRAI
+      
+      rb://844 approved by marko
+    ------------------------------------------------------------
+    revno: 3097.116.60
+    committer: Inaam Rana <inaam.rana@oracle.com>
+    branch nick: mysql-5.5
+    timestamp: Wed 2011-12-07 09:12:53 -0500
+    message:
+      Bug#11759044 - 51325: DROPPING AN EMPTY INNODB TABLE TAKES A LONG TIME
+      WITH LARGE BUFFER POOL
+      
+      (Note: this a backport of revno:3472 from mysql-trunk)
+      
+      rb://845
+      approved by: Marko
+      
+        When dropping a table (with an .ibd file i.e.: with
+        innodb_file_per_table set) we scan entire LRU to invalidate pages from
+        that table. This can be painful in case of large buffer pools as we hold
+        the buf_pool->mutex for the scan. Note that gravity of the problem does
+        not depend on the size of the table. Even with an empty table but a
+        large and filled up buffer pool we'll end up scanning a very long LRU
+        list.
+        
+        The fix is to scan flush_list and just remove the blocks belonging to
+        the table from the flush_list, marking them as non-dirty. The blocks
+        are left in the LRU list for eventual eviction due to aging. The
+        flush_list is typically much smaller than the LRU list but for cases
+        where it is very long we have the solution of releasing the
+        buf_pool->mutex after scanning 1K pages.
+        
+        buf_page_[set|unset]_sticky(): Use new IO-state BUF_IO_PIN to ensure
+        that a block stays in the flush_list and LRU list when we release
+        buf_pool->mutex. Previously we have been abusing BUF_IO_READ to achieve
+        this.
+    ------------------------------------------------------------
+    revno: 3097.116.59
+    committer: Tor Didriksen <tor.didriksen@oracle.com>
+    branch nick: 5.5-bug13013970geom
+    timestamp: Mon 2011-12-05 15:42:45 +0100
+    message:
+      Bug#13013970 MORE CRASHES IN FIELD_BLOB::GET_KEY_IMAGE
+      
+      The predicate is re-written from
+      ((`test`.`g1`.`a` = geometryfromtext('')) or ...
+      to
+      ((`test`.`g1`.`a` = <cache>(geometryfromtext(''))) or ...
+      
+      The range optimizer calls save_in_field_no_warnings, in order to fetch keys.
+      save_in_field_no_warnings returns 0 because of the cache wrapper,
+      and get_mm_leaf() proceeded to call Field_blob::get_key_image() 
+      which accesses un-initialized data.
+    ------------------------------------------------------------
+    revno: 3097.116.58
+    committer: Tor Didriksen <tor.didriksen@oracle.com>
+    branch nick: 5.5-sighandler
+    timestamp: Fri 2011-12-02 15:16:39 +0100
+    message:
+      Bug#11761576 post-push fix: HAVE_EXPLICIT_TEMPLATE_INSTANTIATION in header file broke Mac build
+    ------------------------------------------------------------
+    revno: 3097.116.57
+    committer: Tor Didriksen <tor.didriksen@oracle.com>
+    branch nick: 5.5-sighandler
+    timestamp: Fri 2011-12-02 14:16:48 +0100
+    message:
+      Bug#11761576 54082: HANDLE_SEGFAULT MAKES USE OF UNSAFE FUNCTIONS
+      
+      handle_segfault is the signal handler code of mysqld.  however, it makes
+      calls to potentially unsafe functions localtime_r, fprintf, fflush.
+    ------------------------------------------------------------
+    revno: 3097.116.56 [merge]
+    committer: Inaam Rana <inaam.rana@oracle.com>
+    branch nick: mysql-5.5
+    timestamp: Thu 2011-12-01 09:47:12 -0500
+    message:
+      merge from mysql-5.1
+        ------------------------------------------------------------
+        revno: 2661.787.65
+        committer: Inaam Rana <inaam.rana@oracle.com>
+        branch nick: mysql-5.1
+        timestamp: Thu 2011-12-01 09:41:52 -0500
+        message:
+          Bug#13414773 -INNODB_FAST_SHUTDOWN=2, ASSERT STATE == BUF_BLOCK_ZIP_PAGE
+          
+          We can have dirty pages during a fast shutdown. Relax the assertion.
+    ------------------------------------------------------------
+    revno: 3097.116.55
+    committer: sayantan.dutta@oracle.com
+    branch nick: 11746897
+    timestamp: Thu 2011-12-01 18:54:29 +0530
+    message:
+      BUG #11746897 - 29508: PLEASE IMPLEMENT MYSQL-TEST-RUN.PL --STRACE-MASTER
+      Includes fix for strace-client and restricted to strace and linux only.
+      ******
+    ------------------------------------------------------------
+    revno: 3097.116.54
+    committer: Luis Soares <luis.soares@oracle.com>
+    branch nick: mysql-5.5
+    timestamp: Thu 2011-12-01 00:54:54 +0000
+    message:
+      BUG#11745230
+      
+      Refactored the test case: hardened and extended it. Created test inc file
+      to abstract the task of relocating binlogs.
+      
+      Also, disabled it on windows for not cluttering the test case any further, 
+      as it depends heavily on doing filesystem operations and path handling.
+    ------------------------------------------------------------
+    revno: 3097.116.53 [merge]
+    committer: Tor Didriksen <tor.didriksen@oracle.com>
+    branch nick: 5.5
+    timestamp: Wed 2011-11-30 17:13:04 +0100
+    message:
+      NULL merge 5.1 => 5.5
+        ------------------------------------------------------------
+        revno: 2661.787.64
+        committer: Tor Didriksen <tor.didriksen@oracle.com>
+        branch nick: 5.1-sighandler
+        timestamp: Wed 2011-11-30 17:11:13 +0100
+        message:
+          Bug#11761576 54082: HANDLE_SEGFAULT MAKES USE OF UNSAFE FUNCTIONS
+          
+          Post-push fix: build break on windows/optimized
+    ------------------------------------------------------------
+    revno: 3097.116.52 [merge]
+    committer: Tor Didriksen <tor.didriksen@oracle.com>
+    branch nick: 5.5
+    timestamp: Wed 2011-11-30 15:56:38 +0100
+    message:
+      Mostly NULL-merge 5.1 => 5.5 of
+      Bug#11761576 54082: HANDLE_SEGFAULT MAKES USE OF UNSAFE FUNCTIONS
+        ------------------------------------------------------------
+        revno: 2661.787.63
+        committer: Tor Didriksen <tor.didriksen@oracle.com>
+        branch nick: 5.1-sighandler
+        timestamp: Wed 2011-11-30 15:39:29 +0100
+        message:
+          Bug#11761576 54082: HANDLE_SEGFAULT MAKES USE OF UNSAFE FUNCTIONS
+          
+          handle_segfault is the signal handler code of mysqld.  however, it makes
+          calls to potentially unsafe functions localtime_r, fprintf, fflush.
+    ------------------------------------------------------------
+    revno: 3097.116.51 [merge]
+    committer: Tor Didriksen <tor.didriksen@oracle.com>
+    branch nick: 5.5
+    timestamp: Wed 2011-11-30 10:45:23 +0100
+    message:
+      NULL merge 5.1 => 5.5
+        ------------------------------------------------------------
+        revno: 2661.787.62
+        committer: Tor Didriksen <tor.didriksen@oracle.com>
+        branch nick: 5.1
+        timestamp: Tue 2011-11-29 15:52:47 +0100
+        message:
+          Build broken for gcc 4.5.1 in optimized mode.
+          
+          readline.cc: In function char* batch_readline(LINE_BUFFER*):
+          readline.cc:60:9: error: out_length may be used uninitialized in this function
+          log.cc: In function int find_uniq_filename(char*):
+          log.cc:1857:8: error: number may be used uninitialized in this function
+    ------------------------------------------------------------
+    revno: 3097.116.50
+    committer: Andrei Elkin <andrei.elkin@oracle.com>
+    branch nick: mysql-5.5
+    timestamp: Tue 2011-11-29 22:30:04 +0200
+    message:
+      reverting the initial patch for bug#13437900 for refinement.
+    ------------------------------------------------------------
+    revno: 3097.116.49
+    committer: Andrei Elkin <andrei.elkin@oracle.com>
+    branch nick: 5.5-bug13437900-repl_ignore_server_ids
+    timestamp: Tue 2011-11-29 20:17:02 +0200
+    message:
+      Bug#13437900 - VALGRIND REPORTS A LEAK FOR REPL_IGNORE_SERVER_IDS
+      
+      There was memory leak when running some tests on PB2.
+      The reason of the failure is an early return from change_master()
+      that was supposed to deallocate a dyn-array.
+      
+      Fixed with relocating the dyn-array's destructor at ~LEX() that is
+      the end of the session, per Gleb's patch idea.
+      Two optimizations were done: the static buffer for the dyn-array to base on,
+      and the array initialization is called precisely when it's necessary rather than
+      per each CHANGE-MASTER as before.
+       
+    ------------------------------------------------------------
+    revno: 3097.116.48 [merge]
+    committer: Luis Soares <luis.soares@oracle.com>
+    branch nick: mysql-5.5
+    timestamp: Tue 2011-11-29 14:34:16 +0000
+    message:
+      BUG#11745230
+      
+      Automerged approved bzr bundle into latest mysql-5.5.
+        ------------------------------------------------------------
+        revno: 3097.120.1
+        committer: Luis Soares <luis.soares@oracle.com>
+        branch nick: mysql-5.5
+        timestamp: Thu 2011-11-24 17:15:58 +0000
+        message:
+          BUG#11745230: 12133: MASTER.INDEX FILE KEEPS MYSQLD FROM STARTING IF
+                        BIN LOG HAS BEEN MOVED 
+          
+          When moving the binary/relay log files from one location to
+          another and restarting the server with a different log-bin or
+          relay-log paths, would cause the startup process to abort. The
+          root cause was that the server would not be able to find the log
+          files because it would consider old paths for entries in the
+          index file instead of the new location.  What's even worse, the
+          relative paths would not be considered relative to the path
+          provided in log-bin and relay-log, but to mysql_data_dir.
+                
+          We fix the cases where the server contains relative paths. When
+          the server is reading from the index file, it checks whether the
+          entry contains relative paths. If it does, we replace it with the
+          absolute path set in log-bin/relay-log option. Absolute paths
+          remain unchanged and the index must be manually edited to
+          consider the new log-bin and/or relay-log path (this should be
+          documented). This is a fix for a GA version, that does not break
+          behavior (that much).
+                
+          For development versions, we should go with Zhenxing's approach 
+          that removes paths altogether from index files.
+    ------------------------------------------------------------
+    revno: 3097.116.47 [merge]
+    committer: Nirbhay Choubey <nirbhay.choubey@oracle.com>
+    branch nick: mysql-5.5
+    timestamp: Tue 2011-11-29 19:31:51 +0530
+    message:
+      Merge of patch for bug#11756764 from mysql-5.1.
+        ------------------------------------------------------------
+        revno: 2661.787.61
+        committer: Nirbhay Choubey <nirbhay.choubey@oracle.com>
+        branch nick: B11756764-5.1
+        timestamp: Tue 2011-11-29 17:59:35 +0530
+        message:
+          Bug#11756764 48726: MYSQLD KEEPS CRASHING WITH SIGSEGV
+                              WITH MYISAM_USE_MMAP ENABLED
+          
+          MySQL server can crash due to segmentation fault when
+          started with myisam_use_mmap.
+          
+          The reason behind this being, while making a request to
+          unmap (munmap) the previously mapped memory (mmap), the
+          size passed was 7 bytes larger than the size requested at
+          the time of mapping. This can eventually unmap the adjacent
+          memory mapped block, belonging to some other memory-map pool.
+          Hence the subsequent call to mmap can map a region which was
+          still a valid memory mapped area.
+          
+          Fixed by removing the extra 7-byte margin which was erroneously
+          added to the size, used for unmappping.
+    ------------------------------------------------------------
+    revno: 3097.116.46 [merge]
+    committer: Luis Soares <luis.soares@oracle.com>
+    branch nick: mysql-5.5-latest
+    timestamp: Thu 2011-11-24 15:39:46 +0000
+    message:
+      BUG#13427949
+      
+      Automerged against latest mysql-5.5.
+        ------------------------------------------------------------
+        revno: 3097.119.1
+        committer: Luis Soares <luis.soares@oracle.com>
+        branch nick: mysql-5.5
+        timestamp: Thu 2011-11-24 14:51:18 +0000
+        message:
+          BUG#13427949: CHANGE MASTER TO USER='' (EMPTY USER) CAUSES ERRORS ON VALGRING 
+            
+          When passing an empty user to the connect function will cause
+          valgrind warnings. Seems that the client code is not prepared 
+          to handle empty users. On 5.6 this can even be triggered by 
+          START SLAVE PASSWORD='...'; i.e., without setting USER='...' on
+          the START SLAVE command (see WL#4143 for details on the new
+          additional START SLAVE commands).
+            
+          To fix this, we disallow empty users when configuring the slave
+          connection parameters (this decision might be revisited if the 
+          client code accepts empty users in the future).
+    ------------------------------------------------------------
+    revno: 3097.116.45 [merge]
+    committer: Ashish Agarwal<ashish.y.agarwal@oracle.com>
+    branch nick: mysql-5.5
+    timestamp: Wed 2011-11-23 18:50:29 +0530
+    message:
+      BUG#11751793 - 42784: Merge from mysql-5.1 to mysql-5.5
+        ------------------------------------------------------------
+        revno: 2661.787.60
+        committer: Ashish Agarwal<ashish.y.agarwal@oracle.com>
+        branch nick: bug_93_5.1
+        timestamp: Wed 2011-11-23 18:33:29 +0530
+        message:
+          BUG#11751793 - 42784: ARCHIVE TABLES CAUSE 100% CPU USAGE
+                                AND HANG IN SHOW TABLE STATUS.
+          
+          ISSUE: Table corruption due to concurrent queries.
+                 Different threads running insert and check
+                 query leads to table corruption. Not properly locked,
+                 rows are inserted in between check query.
+          
+          SOLUTION: In check query mutex lock is acquired
+                    for a longer time to handle concurrent
+                    insert and check query.
+          
+          NOTE: Additionally we backported the fix for CHECKSUM
+                issue(bug#11758979).
+    ------------------------------------------------------------
+    revno: 3097.116.44
+    committer: Build Team <MYSQL-RE_WW@oracle.com>
+    branch nick: mysql-5.5
+    timestamp: Wed 2011-11-23 12:33:59 +0100
+    message:
+      Bumped version  number to 5.5.20
+    ------------------------------------------------------------
+    revno: 3097.116.43
+    tags: mysql-5.5.19, clone-5.5.19-build
+    committer: Jimmy Yang <jimmy.yang@oracle.com>
+    branch nick: mysql-5.5
+    timestamp: Tue 2011-11-22 07:06:19 -0800
+    message:
+      Disable innodb_corrupt_bit.test on windows, issues with
+      innodb_change_buffering_debug prevents creating the Dup Key scenario on
+      windows
