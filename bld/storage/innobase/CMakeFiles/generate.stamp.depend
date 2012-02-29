@@ -1,0 +1,5 @@
+# CMake generation dependency list for this directory.
+D:/git/mysql-5.5.20/storage/innobase/CMakeLists.txt
+C:/Program Files/CMake 2.8/share/cmake-2.8/Modules/CheckFunctionExists.cmake
+C:/Program Files/CMake 2.8/share/cmake-2.8/Modules/CheckCSourceCompiles.cmake
+C:/Program Files/CMake 2.8/share/cmake-2.8/Modules/CheckCSourceRuns.cmake
