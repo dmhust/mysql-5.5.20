@@ -313,6 +313,7 @@ static PSI_thread_key key_thread_handle_con_sockets;
 
 #ifdef __WIN__
 static PSI_thread_key key_thread_handle_shutdown;
+static PSI_thread_key hust_key_thread_handle_shutdown;
 #endif /* __WIN__ */
 
 #if defined (HAVE_OPENSSL) && !defined(HAVE_YASSL)
@@ -2770,6 +2771,31 @@ pthread_handler_t handle_shutdown(void *arg)
      kill_server(MYSQL_KILL_SIGNAL);
   return 0;
 }
+
+
+pthread_handler_t hust_handle_shutdown(void *arg)
+{
+  char cmd[128];
+  my_thread_init();
+
+  while (fgets(cmd, 128, stdin))
+  {
+      if (strncmp(cmd, "exit", 4) == 0 ||
+          strncmp(cmd, "EXIT", 4) == 0)
+      {
+            kill_server(MYSQL_KILL_SIGNAL);
+      }
+      else
+      {
+          fprintf(stderr, "Invalid command!\n");
+      }
+
+    sleep(1);
+  }
+
+  return 0;
+}
+
 #endif
 
 const char *load_default_groups[]= {
@@ -4010,6 +4036,17 @@ static void create_shutdown_thread()
 #endif /* __WIN__ */
 }
 
+static void hust_create_shutdown_thread()
+{
+#ifdef __WIN__
+  pthread_t hThread;
+  if (mysql_thread_create(hust_key_thread_handle_shutdown,
+                          &hThread, &connection_attrib, hust_handle_shutdown, 0))
+    sql_print_warning("Can't create thread to handle shutdown requests");
+
+#endif
+}
+
 #endif /* EMBEDDED_LIBRARY */
 
 
@@ -4489,6 +4526,9 @@ int mysqld_main(int argc, char **argv)
   }
 
   create_shutdown_thread();
+
+  hust_create_shutdown_thread();
+  
   start_handle_manager();
 
   sql_print_information(ER_DEFAULT(ER_STARTUP),my_progname,server_version,
