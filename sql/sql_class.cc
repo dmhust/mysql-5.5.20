@@ -882,6 +882,7 @@ THD::THD()
   m_binlog_invoker= FALSE;
   memset(&invoker_user, 0, sizeof(invoker_user));
   memset(&invoker_host, 0, sizeof(invoker_host));
+  connect_state= THD::CONN_RUNNING; 
 }
 
 
@@ -1600,6 +1601,18 @@ bool THD::store_globals()
   */
   thr_lock_info_init(&lock_info);
   return 0;
+}
+
+
+void THD::start_idle_state()
+{
+    connect_state= CONN_IDLE;
+    idle_stime= my_micro_time();
+}
+
+void THD::set_conn_state(conn_state state)
+{
+    connect_state= state;
 }
 
 /*

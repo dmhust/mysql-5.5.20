@@ -716,6 +716,11 @@ bool do_command(THD *thd)
   */
   DEBUG_SYNC(thd, "before_do_command_net_read");
 
+  mysql_mutex_lock(&thd->LOCK_thd_data);
+  thd->start_idle_state();
+  mysql_mutex_unlock(&thd->LOCK_thd_data);
+
+
   if ((packet_length= my_net_read(net)) == packet_error)
   {
     DBUG_PRINT("info",("Got error %d reading command from socket %s",
@@ -738,6 +743,10 @@ bool do_command(THD *thd)
     return_value= FALSE;
     goto out;
   }
+
+  mysql_mutex_lock(&thd->LOCK_thd_data);
+  thd->set_conn_state(THD::CONN_RUNNING);
+  mysql_mutex_unlock(&thd->LOCK_thd_data);
 
   packet= (char*) net->read_pos;
   /*

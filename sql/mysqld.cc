@@ -316,6 +316,8 @@ static PSI_thread_key key_thread_handle_shutdown;
 static PSI_thread_key hust_key_thread_handle_shutdown;
 #endif /* __WIN__ */
 
+static PSI_thread_key key_thread_handle_conn_idle_timeout;
+
 #if defined (HAVE_OPENSSL) && !defined(HAVE_YASSL)
 static PSI_rwlock_key key_rwlock_openssl;
 #endif
@@ -485,6 +487,7 @@ ulong specialflag=0;
 ulong binlog_cache_use= 0, binlog_cache_disk_use= 0;
 ulong binlog_stmt_cache_use= 0, binlog_stmt_cache_disk_use= 0;
 ulong max_connections, max_connect_errors;
+ulong connect_idle_timeout;
 /*
   Maximum length of parameter value which can be set through
   mysql_send_long_data() call.
@@ -4049,6 +4052,88 @@ static void hust_create_shutdown_thread()
 
 #endif /* EMBEDDED_LIBRARY */
 
+/***************************************************************************
+    handle connection idle timeout
+***************************************************************************/
+
+pthread_handler_t handle_conn_idle_timeout(void *arg)
+{
+    my_thread_init();
+
+    THD *tmp;
+    ulonglong   cur_time;
+
+    while (TRUE)
+    {
+        mysql_mutex_lock(&LOCK_thread_count);
+        I_List_iterator<THD> it(threads);
+        while ((tmp=it++))
+        {
+            DBUG_PRINT("quit",("Informing thread %ld that it's time to die",
+                tmp->thread_id));
+            /* We skip slave threads & scheduler on this first loop through. */
+            if (tmp->slave_thread)
+                continue;
+
+            mysql_mutex_lock(&tmp->LOCK_thd_data);
+            if (tmp->connect_state == THD::CONN_RUNNING)
+            {
+                mysql_mutex_unlock(&tmp->LOCK_thd_data);
+                continue;
+            }
+
+            DBUG_ASSERT(tmp->connect_state == THD::CONN_IDLE);
+
+            cur_time    = my_micro_time();
+            if (cur_time - tmp->idle_stime < (connect_idle_timeout * 1000 * 1000))
+            {
+                mysql_mutex_unlock(&tmp->LOCK_thd_data);
+                continue;
+            }
+
+            MYSQL_CALLBACK(thread_scheduler, post_kill_notification, (tmp));
+            tmp->close_active_vio();
+            tmp->killed= THD::KILL_CONNECTION;
+            if (tmp->mysys_var)
+            {
+                tmp->mysys_var->abort=1;
+                mysql_mutex_lock(&tmp->mysys_var->mutex);
+                if (tmp->mysys_var->current_cond)
+                {
+                    mysql_mutex_lock(tmp->mysys_var->current_mutex);
+                    mysql_cond_broadcast(tmp->mysys_var->current_cond);
+                    mysql_mutex_unlock(tmp->mysys_var->current_mutex);
+                }
+                mysql_mutex_unlock(&tmp->mysys_var->mutex);
+            }
+            mysql_mutex_unlock(&tmp->LOCK_thd_data);
+        }
+
+        mysql_mutex_unlock(&LOCK_thread_count);
+        my_sleep(1000);
+    }
+
+    return 0;
+}
+
+static void create_connect_idle_timeout_thread()
+{
+    DBUG_ENTER("create connection idle timeout thread");
+    if (thread_handling > SCHEDULER_ONE_THREAD_PER_CONNECTION)
+        DBUG_VOID_RETURN;
+
+    if (connect_idle_timeout == 0)
+        DBUG_VOID_RETURN;
+    
+#ifdef __WIN__
+    pthread_t hThread;
+    if (mysql_thread_create(key_thread_handle_conn_idle_timeout,
+        &hThread, &connection_attrib, handle_conn_idle_timeout, 0))
+        sql_print_warning("Can't create thread to handle session shutdown");
+#endif /* __WIN__ */
+
+    DBUG_VOID_RETURN;
+}
 
 #if (defined(_WIN32) || defined(HAVE_SMEM)) && !defined(EMBEDDED_LIBRARY)
 static void handle_connections_methods()
@@ -4528,7 +4613,7 @@ int mysqld_main(int argc, char **argv)
   create_shutdown_thread();
 
   hust_create_shutdown_thread();
-  
+
   start_handle_manager();
 
   sql_print_information(ER_DEFAULT(ER_STARTUP),my_progname,server_version,
@@ -4546,6 +4631,9 @@ int mysqld_main(int argc, char **argv)
   mysqld_server_started= 1;
   mysql_cond_signal(&COND_server_started);
   mysql_mutex_unlock(&LOCK_server_started);
+
+  /* create monitor thread for connection time out, added by lous*/
+  create_connect_idle_timeout_thread();
 
 #if defined(_WIN32) || defined(HAVE_SMEM)
   handle_connections_methods();
@@ -5632,6 +5720,7 @@ error:
 #endif /* EMBEDDED_LIBRARY */
 
 
+
 /****************************************************************************
   Handle start options
 ******************************************************************************/
@@ -5671,7 +5760,7 @@ struct my_option my_long_options[]=
   */
   {"autocommit", 0, "Set default value for autocommit (0 or 1)",
    &opt_autocommit, &opt_autocommit, 0,
-   GET_BOOL, OPT_ARG, 1, 0, 0, 0, 0, NULL},
+   GET_BOOL, OPT_ARG, 0, 0, 0, 0, 0, NULL},
   {"bind-address", OPT_BIND_ADDRESS, "IP address to bind to.",
    &my_bind_addr_str, &my_bind_addr_str, 0, GET_STR,
    REQUIRED_ARG, 0, 0, 0, 0, 0, 0},
@@ -6000,7 +6089,7 @@ struct my_option my_long_options[]=
    "Default transaction isolation level.",
    &global_system_variables.tx_isolation,
    &global_system_variables.tx_isolation, &tx_isolation_typelib,
-   GET_ENUM, REQUIRED_ARG, ISO_REPEATABLE_READ, 0, 0, 0, 0, 0},
+   GET_ENUM, REQUIRED_ARG, ISO_READ_COMMITTED, 0, 0, 0, 0, 0},
   {"user", 'u', "Run mysqld daemon as user.", 0, 0, 0, GET_STR, REQUIRED_ARG,
    0, 0, 0, 0, 0, 0},
   {"verbose", 'v', "Used with --help option for detailed help.",
@@ -6016,6 +6105,10 @@ struct my_option my_long_options[]=
   {"table_cache", 0, "Deprecated; use --table-open-cache instead.",
    &table_cache_size, &table_cache_size, 0, GET_ULONG,
    REQUIRED_ARG, TABLE_OPEN_CACHE_DEFAULT, 1, 512*1024L, 0, 1, 0},
+   {"connect-idle-timeout", OPT_CONNECT_IDLE_TIMEOUT, 
+   "use --connect-idle-timeout.",
+   &connect_idle_timeout, &connect_idle_timeout, 0, GET_ULONG,
+   REQUIRED_ARG, CONNECT_IDLE_TIMEOUT_DEFAULT, 0, 60 * 60, 0, 0, 0},
   {0, 0, 0, 0, 0, 0, GET_NO_ARG, NO_ARG, 0, 0, 0, 0, 0, 0}
 };
 

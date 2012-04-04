@@ -2191,7 +2191,7 @@ public:
   void cleanup_after_query();
   bool store_globals();
   bool restore_globals();
-#ifdef SIGNAL_WITH_VIO_CLOSE
+ #ifdef SIGNAL_WITH_VIO_CLOSE
   inline void set_active_vio(Vio* vio)
   {
     mysql_mutex_lock(&LOCK_thd_data);
@@ -2814,6 +2814,22 @@ public:
   LEX_STRING get_invoker_user() { return invoker_user; }
   LEX_STRING get_invoker_host() { return invoker_host; }
   bool has_invoker() { return invoker_user.length > 0; }
+  /**
+    connection idle timeout variables.
+    state && idle_start_time
+  */
+  enum conn_state
+  {
+      CONN_IDLE = 0,
+      CONN_RUNNING
+  };
+  conn_state volatile connect_state; /** idle state */
+
+  ulonglong idle_stime; /** idle start time */
+
+  void start_idle_state();
+  void set_conn_state(conn_state state);
+
 private:
 
   /** The current internal error handler for this thread, or NULL. */
@@ -2856,6 +2872,7 @@ private:
    */
   LEX_STRING invoker_user;
   LEX_STRING invoker_host;
+
 };
 
 
