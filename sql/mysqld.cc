@@ -4124,13 +4124,11 @@ static void create_connect_idle_timeout_thread()
 
     if (connect_idle_timeout == 0)
         DBUG_VOID_RETURN;
-    
-#ifdef __WIN__
+
     pthread_t hThread;
     if (mysql_thread_create(key_thread_handle_conn_idle_timeout,
         &hThread, &connection_attrib, handle_conn_idle_timeout, 0))
         sql_print_warning("Can't create thread to handle session shutdown");
-#endif /* __WIN__ */
 
     DBUG_VOID_RETURN;
 }
