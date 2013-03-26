@@ -1,6 +1,6 @@
 # create a directory for build
-mkdir test
-cd test
+mkdir bld 
+cd bld 
 
 # cmake && make && make install
 cmake -DWITH_DEBUG=1 -DCMAKE_INSTALL_PREFIX=./mysql  -DMYSQL_DATADIR=./mysql/data ..

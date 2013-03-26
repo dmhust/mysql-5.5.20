@@ -1,7 +1,0 @@
-# CMake generation dependency list for this directory.
-D:/git/mysql-5.5.20/support-files/CMakeLists.txt
-D:/git/mysql-5.5.20/support-files/my-huge.cnf.sh
-D:/git/mysql-5.5.20/support-files/my-innodb-heavy-4G.cnf.sh
-D:/git/mysql-5.5.20/support-files/my-large.cnf.sh
-D:/git/mysql-5.5.20/support-files/my-medium.cnf.sh
-D:/git/mysql-5.5.20/support-files/my-small.cnf.sh

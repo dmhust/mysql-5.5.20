@@ -1,9 +1,0 @@
-# CMake generation dependency list for this directory.
-D:/git/mysql-5.5.20/scripts/CMakeLists.txt
-D:/git/mysql-5.5.20/scripts/mysql_install_db.pl.in
-D:/git/mysql-5.5.20/scripts/mysql_config.pl.in
-D:/git/mysql-5.5.20/scripts/mysql_secure_installation.pl.in
-D:/git/mysql-5.5.20/scripts/mysql_convert_table_format.sh
-D:/git/mysql-5.5.20/scripts/mysqld_multi.sh
-D:/git/mysql-5.5.20/scripts/mysqldumpslow.sh
-D:/git/mysql-5.5.20/scripts/mysqlhotcopy.sh
