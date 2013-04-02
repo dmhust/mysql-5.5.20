@@ -6087,7 +6087,7 @@ struct my_option my_long_options[]=
    "Default transaction isolation level.",
    &global_system_variables.tx_isolation,
    &global_system_variables.tx_isolation, &tx_isolation_typelib,
-   GET_ENUM, REQUIRED_ARG, ISO_READ_COMMITTED, 0, 0, 0, 0, 0},
+   GET_ENUM, REQUIRED_ARG, ISO_REPEATABLE_READ, 0, 0, 0, 0, 0},
   {"user", 'u', "Run mysqld daemon as user.", 0, 0, 0, GET_STR, REQUIRED_ARG,
    0, 0, 0, 0, 0, 0},
   {"verbose", 'v', "Used with --help option for detailed help.",
